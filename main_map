@@ -1,0 +1,79 @@
+library(shiny)
+library(leaflet)
+library(sf)
+library(data.table)
+library(readr)
+library(stringr)
+library(dplyr)
+library(RColorBrewer)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(DT)
+library(vroom)
+library(shinyWidgets)
+
+dt_syria <- fread("~/Documents/Turkey_Syria/turkey_airquality/acled_dt_syr_war.csv")
+dt_turkey <- fread("~/Documents/Turkey_Syria/turkey_airquality/turkey_airquality_and_syrian_war.csv")
+
+countries <- ne_countries(
+  country = c("Turkey", "Syria"),
+  returnclass = "sf",
+  scale = "medium"
+)
+
+sum_syria <- dt_syria
+sum_syria[, yy := year(date_v1)]
+sum_syria[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
+sum_syria <- sum_syria[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin1)]
+
+stations <- dt_turkey %>% 
+  distinct(monitor_id, monitor, mon_lat, mon_lon)
+
+ui <- fluidPage(
+  fluidRow(
+    column(width = 3,
+           h4("Turkey Filters"),
+           selectInput("turkey_station", "Station:", choices = unique(dt_turkey$monitor), multiple = TRUE),
+           sliderInput("turkey_year", "Year", min = min(dt_turkey$date_v1), max = max(dt_turkey$date_v1), value = range(dt_turkey$date_v1))
+    ),
+    
+    column(width = 6,
+           leafletOutput("map", height = "90vh")
+    ),
+    
+    column(width = 3,
+           h4("Syria Filters"),
+           selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
+           selectInput("admin1", "Admin1:", choices = unique(dt_syria$admin1), multiple = TRUE),
+           selectInput("admin2", "Admin2:", choices = unique(dt_syria$admin2), multiple = TRUE),
+           selectInput("admin3", "Admin3:", choices = unique(dt_syria$admin3), multiple = TRUE),
+           sliderInput("syria_year", "Year:", min = min(dt_syria$yy), max = max(dt_syria$yy), value = range(dt_syria$yy))
+    )
+  )
+)
+
+
+server <- function(input, output, session) {
+  
+  output$map <- renderLeaflet({
+    leaflet() %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addPolygons(
+        data = countries,
+        fill = FALSE, color = "black", weight = 1.2
+      ) %>%
+      addCircleMarkers(
+        data = stations,
+        lng = ~mon_lon, lat = ~mon_lat,
+        popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id),
+        radius = 5, fillOpacity = 0.8, color = "darkgreen"
+      ) %>%
+      fitBounds(
+        lng1 = min(stations$mon_lon), lat1 = min(stations$mon_lat),
+        lng2 = max(stations$mon_lon), lat2 = max(stations$mon_lat)
+      )
+  })
+  
+}
+
+shinyApp(ui, server)
