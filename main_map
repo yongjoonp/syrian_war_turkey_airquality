@@ -54,6 +54,48 @@ ui <- fluidPage(
 
 
 server <- function(input, output, session) {
+
+  filtered_data_turkey <- reactive({
+    data <- dt_turkey
+    
+    if(!is.null(input$turkey_station) && length(input$turkey_station) > 0) {
+      data <- data[data$monitor %in% input$turkey_station]
+    }
+    
+    if (!is.null(input$turkey_year)) {
+      data <- data[
+        data$data_v1 >= input$turkey_year[1] &
+          data$date_v1 <= input$turkey_year[2], 
+      ]
+    }
+  })
+  
+  filtered_data_syria <- reactive({
+    data <- dt_syria
+    
+    if(!is.null(input$syria_event) && length(input$syria_event) > 0) {
+      data <- data[data$event_type %in% input$syria_event]
+    }
+    
+    if(!is.null(input$admin1) && length(input$admin1) > 0) {
+      data <- data[data$admin1 %in% input$admin1]
+    }
+    
+    if(!is.null(input$admin2) && length(input$admin2) > 0) {
+      data <- data[data$admin2 %in% input$admin2]
+    }
+    
+    if(!is.null(input$admin3) && length(input$admin3) > 0) {
+      data <- data[data$admin3 %in% input$admin3]
+    }
+    
+    if (!is.null(input$date_announced)) {
+      data <- data[
+        data$date_v1 >= input$syria_year[1] &
+          data$date_v1 <= input$ayria_year[2], 
+      ]
+    }
+  })
   
   output$map <- renderLeaflet({
     leaflet() %>%
