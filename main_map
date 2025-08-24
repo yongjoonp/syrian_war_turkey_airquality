@@ -68,6 +68,8 @@ server <- function(input, output, session) {
           data$date_v1 <= input$turkey_year[2], 
       ]
     }
+
+    return(data)
   })
   
   filtered_data_syria <- reactive({
@@ -95,6 +97,8 @@ server <- function(input, output, session) {
           data$date_v1 <= input$ayria_year[2], 
       ]
     }
+
+    return(data)
   })
   
   output$map <- renderLeaflet({
