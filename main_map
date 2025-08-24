@@ -107,9 +107,17 @@ server <- function(input, output, session) {
       addPolygons(
         data = countries,
         fill = FALSE, color = "black", weight = 1.2
-      ) %>%
+      )
+  })
+  
+  observe({
+    data <- filtered_data_turkey()
+    stations_filtered <- distinct(data, monitor_id, monitor, mon_lat, mon_lon)
+    
+    leafletProxy("map") %>%
+      clearMarkers() %>%
       addCircleMarkers(
-        data = stations,
+        data = stations_filtered,
         lng = ~mon_lon, lat = ~mon_lat,
         popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id),
         radius = 5, fillOpacity = 0.8, color = "darkgreen"
@@ -117,7 +125,7 @@ server <- function(input, output, session) {
       fitBounds(
         lng1 = min(stations$mon_lon), lat1 = min(stations$mon_lat),
         lng2 = max(stations$mon_lon), lat2 = max(stations$mon_lat)
-      )
+        )
   })
   
 }
