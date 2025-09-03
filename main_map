@@ -124,6 +124,7 @@ server <- function(input, output, session) {
       addCircleMarkers(
         data = stations_filtered,
         lng = ~mon_lon, lat = ~mon_lat,
+        layerId = ~monitor,
         popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id),
         radius = 5, fillOpacity = 0.8, color = "darkgreen"
       ) %>%
