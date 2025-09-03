@@ -45,8 +45,6 @@ ui <- fluidPage(
            h4("Syria Filters"),
            selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
            selectInput("admin1", "Admin 1:", choices = unique(dt_syria$admin1), multiple = TRUE),
-           selectInput("admin2", "Admin 2:", choices = unique(dt_syria$admin2), multiple = TRUE),
-           selectInput("admin3", "Admin 3:", choices = unique(dt_syria$admin3), multiple = TRUE),
            sliderInput("syria_year", "Year:", min = min(dt_syria$yy), max = max(dt_syria$yy), value = range(dt_syria$yy))
     )
   )
@@ -81,14 +79,6 @@ server <- function(input, output, session) {
     
     if(!is.null(input$admin1) && length(input$admin1) > 0) {
       data <- data[data$admin1 %in% input$admin1]
-    }
-    
-    if(!is.null(input$admin2) && length(input$admin2) > 0) {
-      data <- data[data$admin2 %in% input$admin2]
-    }
-    
-    if(!is.null(input$admin3) && length(input$admin3) > 0) {
-      data <- data[data$admin3 %in% input$admin3]
     }
     
     if (!is.null(input$date_announced)) {
