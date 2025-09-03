@@ -66,14 +66,23 @@ ui <- fluidPage(
     
     column(width = 9,
            leafletOutput("map", height = "90vh")
-    ),
+    )
+  ),
+  
+  absolutePanel(
+    id = "plots", class = "panel", 
+    fixed = TRUE, draggable = TRUE,
+    bottom = 10, left = 10, width = 600, height = 300,
+    fluidRow(
+      column(6, plotOutput("scatter_uw", height = "280px")),
+      column(6, plotOutput("scatter_dw", height = "280px"))
+    )
   )
 )
 
 
-
 server <- function(input, output, session) {
-
+  
   filtered_data_turkey <- reactive({
     data <- dt_turkey
     
@@ -131,9 +140,41 @@ server <- function(input, output, session) {
       fitBounds(
         lng1 = min(stations$mon_lon), lat1 = min(stations$mon_lat),
         lng2 = max(stations$mon_lon), lat2 = max(stations$mon_lat)
-        )
+      )
   })
   
+  
+  clicked_station <- reactiveVal(NULL)
+  observeEvent(input$map_marker_click, {
+    click <- input$map_marker_click
+    clicked_station(click$id)
+  })
+  
+  output$scatter_uw <- renderPlot({
+    req(clicked_station())
+    df <- filtered_data_turkey() %>%
+      filter(monitor == clicked_station())
+    
+    ggplot(df, aes(x = uw_events, y = pm10)) +
+      geom_point(color = "darkblue", alpha = 0.6) +
+      geom_smooth(method = "lm", se = FALSE, color = "red") +
+      labs(title = paste("Upwind Events vs PM10 -", clicked_station(), "-", input$year),
+           x = "Upwind Events", y = "PM10") +
+      theme_minimal()
+  })
+  
+  output$scatter_dw <- renderPlot({
+    req(clicked_station())
+    df <- filtered_data_turkey() %>%
+      filter(monitor == clicked_station())
+    
+    ggplot(df, aes(x = dw_events, y = pm10)) +
+      geom_point(color = "darkgreen", alpha = 0.6) +
+      geom_smooth(method = "lm", se = FALSE, color = "red") +
+      labs(title = paste("Downwind Events vs PM10 -", clicked_station(), "-", input$year),
+           x = "Downwind Events", y = "PM10") +
+      theme_minimal()
+  })
 }
 
 shinyApp(ui, server)
