@@ -84,7 +84,7 @@ server <- function(input, output, session) {
     if (!is.null(input$date_announced)) {
       data <- data[
         data$date_v1 >= input$syria_year[1] &
-          data$date_v1 <= input$ayria_year[2], 
+          data$date_v1 <= input$syria_year[2], 
       ]
     }
 
