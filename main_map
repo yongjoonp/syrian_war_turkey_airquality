@@ -59,7 +59,6 @@ ui <- fluidPage(
     column(width = 3,
            h4("Filters"),
            pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
-           selectInput("turkey_station", "Station:", choices = unique(dt_turkey$monitor), multiple = TRUE),
            selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
            selectInput("admin1", "Admin 1:", choices = unique(dt_syria$admin1), multiple = TRUE),
     ),
@@ -85,10 +84,6 @@ server <- function(input, output, session) {
   
   filtered_data_turkey <- reactive({
     data <- dt_turkey
-    
-    if(!is.null(input$turkey_station) && length(input$turkey_station) > 0) {
-      data <- data[data$monitor %in% input$turkey_station]
-    }
     
     if(!is.null(input$year) && length(input$year) > 0) {
       data <- data[data$yy %in% input$year]
