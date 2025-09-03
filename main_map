@@ -32,21 +32,17 @@ stations <- dt_turkey %>%
 ui <- fluidPage(
   fluidRow(
     column(width = 3,
-           h4("Turkey Filters"),
+           h4("Filters"),
            selectInput("turkey_station", "Station:", choices = unique(dt_turkey$monitor), multiple = TRUE),
-           sliderInput("turkey_year", "Year", min = min(dt_turkey$date_v1), max = max(dt_turkey$date_v1), value = range(dt_turkey$date_v1))
-    ),
-    
-    column(width = 6,
-           leafletOutput("map", height = "90vh")
-    ),
-    
-    column(width = 3,
-           h4("Syria Filters"),
+           sliderInput("turkey_year", "Year", min = min(dt_turkey$date_v1), max = max(dt_turkey$date_v1), value = range(dt_turkey$date_v1)),
            selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
            selectInput("admin1", "Admin 1:", choices = unique(dt_syria$admin1), multiple = TRUE),
            sliderInput("syria_year", "Year:", min = min(dt_syria$yy), max = max(dt_syria$yy), value = range(dt_syria$yy))
-    )
+    ),
+    
+    column(width = 9,
+           leafletOutput("map", height = "90vh")
+    ),
   )
 )
 
