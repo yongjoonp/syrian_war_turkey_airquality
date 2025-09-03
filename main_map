@@ -21,6 +21,8 @@ countries <- ne_countries(
   scale = "medium"
 )
 
+dt_turkey <- dt_turkey[, yy := year(date_v1)]
+
 sum_syria <- dt_syria
 sum_syria[, yy := year(date_v1)]
 sum_syria[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
@@ -33,11 +35,10 @@ ui <- fluidPage(
   fluidRow(
     column(width = 3,
            h4("Filters"),
+           pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
            selectInput("turkey_station", "Station:", choices = unique(dt_turkey$monitor), multiple = TRUE),
-           sliderInput("turkey_year", "Year", min = min(dt_turkey$date_v1), max = max(dt_turkey$date_v1), value = range(dt_turkey$date_v1)),
            selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
            selectInput("admin1", "Admin 1:", choices = unique(dt_syria$admin1), multiple = TRUE),
-           sliderInput("syria_year", "Year:", min = min(dt_syria$yy), max = max(dt_syria$yy), value = range(dt_syria$yy))
     ),
     
     column(width = 9,
@@ -45,6 +46,7 @@ ui <- fluidPage(
     ),
   )
 )
+
 
 
 server <- function(input, output, session) {
@@ -56,13 +58,10 @@ server <- function(input, output, session) {
       data <- data[data$monitor %in% input$turkey_station]
     }
     
-    if (!is.null(input$turkey_year)) {
-      data <- data[
-        data$date_v1 >= input$turkey_year[1] &
-          data$date_v1 <= input$turkey_year[2], 
-      ]
+    if(!is.null(input$year) && length(input$year) > 0) {
+      data <- data[data$yy %in% input$year]
     }
-
+    
     return(data)
   })
   
@@ -77,13 +76,10 @@ server <- function(input, output, session) {
       data <- data[data$admin1 %in% input$admin1]
     }
     
-    if (!is.null(input$syria_year)) {
-      data <- data[
-        data$date_v1 >= input$syria_year[1] &
-          data$date_v1 <= input$syria_year[2], 
-      ]
+    if(!is.null(input$year) && length(input$year) > 0) {
+      data <- data[data$yy %in% input$year]
     }
-
+    
     return(data)
   })
   
