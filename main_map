@@ -20,7 +20,9 @@ dt_turkey <- fread("~/Documents/Turkey_Syria/turkey_airquality/turkey_airquality
 syria_admin1 <- st_read("~/Documents/Research Projects/Turkey_Syria/turkey_airquality/syr_adm_unocha/syr_admbnda_adm1_uncs_unocha.json")
 
 syria_admin1 <- syria_admin1 %>%
-  rename(admin1 = ADM1_EN)
+  rename(admin1 = ADM1_EN) %>%
+  mutate(admin1 = str_replace_all(admin1, "-", " ")) %>%
+  mutate(admin1 = str_replace(admin1, "'", ""))
 
 countries <- ne_countries(
   country = c("Turkey", "Syria"),
