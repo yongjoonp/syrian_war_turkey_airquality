@@ -11,6 +11,7 @@ library(rnaturalearthdata)
 library(DT)
 library(vroom)
 library(shinyWidgets)
+library(lubridate)
 
 dt_syria <- fread("~/Documents/Turkey_Syria/turkey_airquality/acled_dt_syr_war.csv")
 dt_turkey <- fread("~/Documents/Turkey_Syria/turkey_airquality/turkey_airquality_and_syrian_war.csv")
