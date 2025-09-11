@@ -38,8 +38,8 @@ dt_turkey_weekly <- dt_turkey %>%
   group_by(yy, week, monitor_id) %>%
   summarise(
     monitor         = first(monitor),
-    latitude        = first(mon_lat),
-    longitude       = first(mon_lon),
+    mon_lat         = first(mon_lat),
+    mon_lon         = first(mon_lon),
     avg_windspeed   = mean(windspeed, na.rm = TRUE),
     avg_temperature = mean(temperature, na.rm = TRUE),
     avg_precip      = mean(precip, na.rm = TRUE),
