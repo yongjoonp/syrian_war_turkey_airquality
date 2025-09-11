@@ -71,6 +71,7 @@ ui <- fluidPage(
     column(width = 3,
            h4("Filters"),
            pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
+           selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "uw", multiple = FALSE),
            selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
            selectInput("admin1", "Admin 1:", choices = unique(dt_syria$admin1), multiple = TRUE),
     ),
