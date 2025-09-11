@@ -28,28 +28,29 @@ dt_turkey <- dt_turkey %>%
     week = isoweek(date_v1)
   )
 
-dt_turkey_grouped <- dt_turkey %>%
-  group_by(yy, monitor_id) %>%
+dt_turkey_weekly <- dt_turkey %>%
+  group_by(yy, week, monitor_id) %>%
   summarise(
-    monitor = first(monitor),
-    latitude = first(mon_lat),
-    longitude = first(mon_lon),
-    avg_windspeed = mean(windspeed, na.rm = TRUE),
+    monitor         = first(monitor),
+    latitude        = first(mon_lat),
+    longitude       = first(mon_lon),
+    avg_windspeed   = mean(windspeed, na.rm = TRUE),
     avg_temperature = mean(temperature, na.rm = TRUE),
-    avg_precip = mean(precip, na.rm = TRUE),
-    avg_humidity = mean(humidity, na.rm = TRUE),
-    avg_pm10 = mean(pm10, na.rm = TRUE),
-    avg_no2 = mean(no2, na.rm = TRUE),
-    tot_events = sum(tot_events, na.rm = TRUE),
-    dw_events = sum(dw_events, na.rm = TRUE),
-    dw_fatals = sum(dw_fatals, na.rm = TRUE),
-    uw_events = sum(uw_events, na.rm = TRUE),
-    uw_fatals = sum(uw_fatals, na.rm = TRUE),
-    tot_fatals = sum(tot_fatals, na.rm = TRUE),
-    nw_events = sum(nw_events, na.rm = TRUE),
-    nw_fatals = sum(nw_fatals, na.rm = TRUE),
+    avg_precip      = mean(precip, na.rm = TRUE),
+    avg_humidity    = mean(humidity, na.rm = TRUE),
+    avg_pm10        = mean(pm10, na.rm = TRUE),
+    avg_no2         = mean(no2, na.rm = TRUE),
+    tot_events      = sum(tot_events, na.rm = TRUE),
+    dw_events       = sum(dw_events, na.rm = TRUE),
+    dw_fatals       = sum(dw_fatals, na.rm = TRUE),
+    uw_events       = sum(uw_events, na.rm = TRUE),
+    uw_fatals       = sum(uw_fatals, na.rm = TRUE),
+    tot_fatals      = sum(tot_fatals, na.rm = TRUE),
+    nw_events       = sum(nw_events, na.rm = TRUE),
+    nw_fatals       = sum(nw_fatals, na.rm = TRUE),
     .groups = "drop"
-  )
+  ) %>%
+  arrange(monitor_id, yy, week)
 
 sum_syria <- dt_syria
 sum_syria[, yy := year(date_v1)]
