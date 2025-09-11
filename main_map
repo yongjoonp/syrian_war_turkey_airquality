@@ -17,6 +17,10 @@ library(magrittr)
 
 dt_syria <- fread("~/Documents/Turkey_Syria/turkey_airquality/acled_dt_syr_war.csv")
 dt_turkey <- fread("~/Documents/Turkey_Syria/turkey_airquality/turkey_airquality_and_syrian_war.csv")
+syria_admin1 <- st_read("~/Documents/Research Projects/Turkey_Syria/turkey_airquality/syr_adm_unocha/syr_admbnda_adm1_uncs_unocha.json")
+
+syria_admin1 <- syria_admin1 %>%
+  rename(admin1 = ADM1_EN)
 
 countries <- ne_countries(
   country = c("Turkey", "Syria"),
@@ -100,22 +104,14 @@ server <- function(input, output, session) {
     return(data)
   })
   
-  filtered_data_syria <- reactive({
-    data <- dt_syria
+  syria_map_data <- reactive({
+    req(input$year)
     
-    if(!is.null(input$syria_event) && length(input$syria_event) > 0) {
-      data <- data[data$event_type %in% input$syria_event]
-    }
-    
-    if(!is.null(input$admin1) && length(input$admin1) > 0) {
-      data <- data[data$admin1 %in% input$admin1]
-    }
-    
-    if(!is.null(input$year) && length(input$year) > 0) {
-      data <- data[data$yy %in% input$year]
-    }
-    
-    return(data)
+    syria_admin1 %>%
+      left_join(
+        sum_syria %>% filter(yy == input$year),
+        by = "admin1"
+      )
   })
   
   output$map <- renderLeaflet({
