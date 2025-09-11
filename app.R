@@ -4,6 +4,7 @@ library(sf)
 library(data.table)
 library(readr)
 library(stringr)
+library(ggplot2)
 library(dplyr)
 library(RColorBrewer)
 library(rnaturalearth)
@@ -21,6 +22,12 @@ data_dir <- "/Users/yongjoonpark/Downloads/turkey_airquality"
 dt_syria <- fread(sprintf("%s/acled_dt_syr_war.csv", data_dir))
 dt_turkey <- fread(sprintf("%s/turkey_airquality_and_syrian_war.csv", data_dir))
 syria_admin1 <- st_read(sprintf("%s/syr_adm_unocha/syr_admbnda_adm1_uncs_unocha.json", data_dir))
+dt_turkey_weekly <- fread(sprintf("%s/dt_turkey_weekly.csv", data_dir))
+
+tmp_weeklydata <- data.table(dt_turkey_weekly)
+tmp_weeklydata[is.nan(avg_pm10), avg_pm10 := NA]
+tmp_weeklydata[is.nan(dw_events), dw_events := NA]
+tmp_weeklydata[is.nan(uw_events), uw_events := NA]
 
 
 syria_admin1 <- syria_admin1 %>%
@@ -40,29 +47,29 @@ dt_turkey <- dt_turkey %>%
     week = isoweek(date_v1)
   )
 
-dt_turkey_weekly <- dt_turkey %>%
-  group_by(yy, week, monitor_id) %>%
-  summarise(
-    monitor         = first(monitor),
-    mon_lat         = first(mon_lat),
-    mon_lon         = first(mon_lon),
-    avg_windspeed   = mean(windspeed, na.rm = TRUE),
-    avg_temperature = mean(temperature, na.rm = TRUE),
-    avg_precip      = mean(precip, na.rm = TRUE),
-    avg_humidity    = mean(humidity, na.rm = TRUE),
-    avg_pm10        = mean(pm10, na.rm = TRUE),
-    avg_no2         = mean(no2, na.rm = TRUE),
-    tot_events      = sum(tot_events, na.rm = TRUE),
-    dw_events       = sum(dw_events, na.rm = TRUE),
-    dw_fatals       = sum(dw_fatals, na.rm = TRUE),
-    uw_events       = sum(uw_events, na.rm = TRUE),
-    uw_fatals       = sum(uw_fatals, na.rm = TRUE),
-    tot_fatals      = sum(tot_fatals, na.rm = TRUE),
-    nw_events       = sum(nw_events, na.rm = TRUE),
-    nw_fatals       = sum(nw_fatals, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  arrange(monitor_id, yy, week)
+# dt_turkey_weekly <- dt_turkey %>%
+#   group_by(yy, week, monitor_id) %>%
+#   summarise(
+#     monitor         = first(monitor),
+#     mon_lat         = first(mon_lat),
+#     mon_lon         = first(mon_lon),
+#     avg_windspeed   = mean(windspeed, na.rm = TRUE),
+#     avg_temperature = mean(temperature, na.rm = TRUE),
+#     avg_precip      = mean(precip, na.rm = TRUE),
+#     avg_humidity    = mean(humidity, na.rm = TRUE),
+#     avg_pm10        = mean(pm10, na.rm = TRUE),
+#     avg_no2         = mean(no2, na.rm = TRUE),
+#     tot_events      = sum(tot_events, na.rm = TRUE),
+#     dw_events       = sum(dw_events, na.rm = TRUE),
+#     dw_fatals       = sum(dw_fatals, na.rm = TRUE),
+#     uw_events       = sum(uw_events, na.rm = TRUE),
+#     uw_fatals       = sum(uw_fatals, na.rm = TRUE),
+#     tot_fatals      = sum(tot_fatals, na.rm = TRUE),
+#     nw_events       = sum(nw_events, na.rm = TRUE),
+#     nw_fatals       = sum(nw_fatals, na.rm = TRUE),
+#     .groups = "drop"
+#   ) %>%
+#   arrange(monitor_id, yy, week)
 
 sum_syria <- dt_syria
 sum_syria[, yy := year(date_v1)]
@@ -77,7 +84,7 @@ ui <- fluidPage(
     column(width = 3,
            h4("Filters"),
            pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
-           selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "uw", multiple = FALSE),
+           selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "dw", multiple = FALSE),
            selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
            selectInput("admin1", "Admin 1:", choices = unique(dt_syria$admin1), multiple = TRUE),
     ),
@@ -111,12 +118,29 @@ server <- function(input, output, session) {
     return(data)
   })
 
+
+  testing_corr <- reactive({
+    req(input$year)
+    req(input$correlation_type)
+
+    this_yy <- input$year
+
+    if(input$correlation_type == "uw"){ corvar <- "uw_events" }
+    else if(input$correlation_type == "dw"){ corvar <- "dw_events" }
+    else{}
+
+    tmp_weeklydata[yy == this_yy & !is.na(avg_pm10) & !is.na(get(corvar)), .(cor_var = cor(get(corvar), avg_pm10))
+      , by = .(monitor, mon_lat, mon_lon, monitor_id)]
+
+  })
+
   filtered_data_weekly <- reactive({
     req(input$year)
     
     dt_turkey_weekly %>%
       filter(yy == input$year)
   })
+  
   
   syria_map_data <- reactive({
     req(input$year)
@@ -140,6 +164,7 @@ server <- function(input, output, session) {
   observe({
     data <- filtered_data_weekly()
     stations_filtered <- distinct(data, monitor_id, monitor, mon_lat, mon_lon)
+    corr_dt <- testing_corr()
     
     leafletProxy("map") %>%
       clearMarkers() %>%
@@ -148,16 +173,18 @@ server <- function(input, output, session) {
     
     leafletProxy("map") %>%
       addCircleMarkers(
-        data = stations_filtered,
+        data = corr_dt,
         lng = ~mon_lon, lat = ~mon_lat,
         layerId = ~monitor,
         popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id),
-        radius = 5, fillOpacity = 0.8, color = "darkgreen"
-      ) %>%
-      fitBounds(
-        lng1 = min(stations$mon_lon), lat1 = min(stations$mon_lat),
-        lng2 = max(stations$mon_lon), lat2 = max(stations$mon_lat)
-      )
+        radius = ~abs(cor_var) * 20,  # Scale the radius by absolute correlation value
+        fillOpacity = 0.8, color = "darkgreen"
+      ) 
+      # %>%
+      # fitBounds(
+      #   lng1 = min(stations$mon_lon), lat1 = min(stations$mon_lat),
+      #   lng2 = max(stations$mon_lon), lat2 = max(stations$mon_lat)
+      # )
     
     syria_data <- syria_map_data()
     
@@ -188,33 +215,34 @@ server <- function(input, output, session) {
     clicked_station(click$id)
   })
   
-  output$scatter_uw <- renderPlot({
-    req(clicked_station())
-    df <- filtered_data_weekly() %>%
-      filter(monitor == clicked_station()) %>%
-      filter(uw_events != 0)
+  # output$scatter_uw <- renderPlot({
+  #   req(clicked_station())
+  #   df <- filtered_data_weekly() %>%
+  #     filter(monitor == clicked_station()) %>%
+  #     filter(uw_events != 0)
     
-    ggplot(df, aes(x = uw_events, y = avg_pm10)) +
-      geom_point(color = "darkblue", alpha = 0.6) +
-      geom_smooth(method = "lm", color = "red") +
-      labs(title = paste("Upwind Events vs PM10 -", clicked_station(), "-", input$year),
-           x = "Upwind Events", y = "PM10") +
-      theme_minimal()
-  })
+  #   ggplot(df, aes(x = uw_events, y = avg_pm10)) +
+  #     geom_point(color = "darkblue", alpha = 0.6) +
+  #     geom_smooth(method = "lm", color = "red") +
+  #     labs(title = paste("Upwind Events vs PM10 -", clicked_station(), "-", input$year),
+  #          x = "Upwind Events", y = "PM10") +
+  #     theme_minimal()
+  # })
   
-  output$scatter_dw <- renderPlot({
-    req(clicked_station())
-    df <- filtered_data_weekly() %>%
-      filter(monitor == clicked_station()) %>%
-      filter(dw_events != 0)
+  # output$scatter_dw <- renderPlot({
+  #   req(clicked_station())
+  #   df <- filtered_data_weekly() %>%
+  #     filter(monitor == clicked_station()) %>%
+  #     filter(dw_events != 0)
     
-    ggplot(df, aes(x = dw_events, y = avg_pm10)) +
-      geom_point(color = "darkgreen", alpha = 0.6) +
-      geom_smooth(method = "lm", color = "red") +
-      labs(title = paste("Downwind Events vs PM10 -", clicked_station(), "-", input$year),
-           x = "Downwind Events", y = "PM10") +
-      theme_minimal()
-  })
+  #   ggplot(df, aes(x = dw_events, y = avg_pm10)) +
+  #     geom_point(color = "darkgreen", alpha = 0.6) +
+  #     geom_smooth(method = "lm", color = "red") +
+  #     labs(title = paste("Downwind Events vs PM10 -", clicked_station(), "-", input$year),
+  #          x = "Downwind Events", y = "PM10") +
+  #     theme_minimal()
+  # })
+
 }
 
 shinyApp(ui, server)
