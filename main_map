@@ -22,7 +22,11 @@ countries <- ne_countries(
   scale = "medium"
 )
 
-dt_turkey <- dt_turkey[, yy := year(date_v1)]
+dt_turkey <- dt_turkey %>%
+  mutate(
+    yy = year(date_v1),
+    week = isoweek(date_v1)
+  )
 
 dt_turkey_grouped <- dt_turkey %>%
   group_by(yy, monitor_id) %>%
