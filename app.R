@@ -14,10 +14,14 @@ library(shinyWidgets)
 library(lubridate)
 library(magrittr)
 
+data_dir <- "~/Documents/"
+data_dir <- "/Users/yongjoonpark/Downloads/turkey_airquality"
 
-dt_syria <- fread("~/Documents/Turkey_Syria/turkey_airquality/acled_dt_syr_war.csv")
-dt_turkey <- fread("~/Documents/Turkey_Syria/turkey_airquality/turkey_airquality_and_syrian_war.csv")
-syria_admin1 <- st_read("~/Documents/Research Projects/Turkey_Syria/turkey_airquality/syr_adm_unocha/syr_admbnda_adm1_uncs_unocha.json")
+
+dt_syria <- fread(sprintf("%s/acled_dt_syr_war.csv", data_dir))
+dt_turkey <- fread(sprintf("%s/turkey_airquality_and_syrian_war.csv", data_dir))
+syria_admin1 <- st_read(sprintf("%s/syr_adm_unocha/syr_admbnda_adm1_uncs_unocha.json", data_dir))
+
 
 syria_admin1 <- syria_admin1 %>%
   rename(admin1 = ADM1_EN) %>%
