@@ -179,7 +179,8 @@ server <- function(input, output, session) {
         layerId = ~monitor,
         popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id),
         radius = ~rescale(abs(cor_var), to = c(5, 15)),
-        fillOpacity = 0.8, color = "darkgreen"
+        fillOpacity = 0.8, 
+        color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
       ) 
       # %>%
       # fitBounds(
