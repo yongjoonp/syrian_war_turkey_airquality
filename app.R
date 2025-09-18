@@ -14,6 +14,7 @@ library(vroom)
 library(shinyWidgets)
 library(lubridate)
 library(magrittr)
+library(scales)
 
 data_dir <- "~/Documents/"
 data_dir <- "/Users/yongjoonpark/Downloads/turkey_airquality"
@@ -177,7 +178,7 @@ server <- function(input, output, session) {
         lng = ~mon_lon, lat = ~mon_lat,
         layerId = ~monitor,
         popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id),
-        radius = ~abs(cor_var) * 20,  # Scale the radius by absolute correlation value
+        radius = ~rescale(abs(cor_var), to = c(5, 15)),
         fillOpacity = 0.8, color = "darkgreen"
       ) 
       # %>%
