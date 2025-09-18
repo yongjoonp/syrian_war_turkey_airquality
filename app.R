@@ -125,16 +125,20 @@ server <- function(input, output, session) {
   testing_corr <- reactive({
     req(input$year)
     req(input$correlation_type)
-
+    
     this_yy <- input$year
-
+    
     if(input$correlation_type == "uw"){ corvar <- "uw_events" }
     else if(input$correlation_type == "dw"){ corvar <- "dw_events" }
     else{}
-
-    tmp_weeklydata[yy == this_yy & !is.na(avg_pm10) & !is.na(get(corvar)), .(cor_var = cor(get(corvar), avg_pm10))
-      , by = .(monitor, mon_lat, mon_lon, monitor_id)]
-
+    
+    tmp_weeklydata[yy == this_yy & !is.na(avg_pm10) & !is.na(get(corvar)), 
+                   .(
+                     cor_var = cor(get(corvar), avg_pm10),
+                     se = sd(get(corvar), na.rm = TRUE) / sqrt(.N)
+                     ),
+                   by = .(monitor, mon_lat, mon_lon, monitor_id)]
+    
   })
 
   filtered_data_weekly <- reactive({
@@ -181,7 +185,7 @@ server <- function(input, output, session) {
         layerId = ~monitor,
         popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id),
         radius = ~rescale(abs(cor_var), to = c(5, 15)),
-        fillOpacity = 0.8, 
+        fillOpacity = ~rescale(se, to = c(0.3, 1)), 
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
       ) 
       # %>%
