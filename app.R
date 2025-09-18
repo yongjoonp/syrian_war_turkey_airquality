@@ -183,9 +183,9 @@ server <- function(input, output, session) {
         data = corr_dt,
         lng = ~mon_lon, lat = ~mon_lat,
         layerId = ~monitor,
-        popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id),
+        popup = ~sprintf("%s \n %.2f (%.2f)", monitor, cor_var, se),
         radius = ~rescale(abs(cor_var), to = c(5, 15)),
-        fillOpacity = ~rescale(se, to = c(0.3, 1)), 
+        fillOpacity = ~rescale(-se, to = c(0.3, 1)), 
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
       ) 
       # %>%
