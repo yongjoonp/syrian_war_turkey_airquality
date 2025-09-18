@@ -81,24 +81,26 @@ stations <- dt_turkey %>%
   distinct(monitor_id, monitor, mon_lat, mon_lon)
 
 ui <- fluidPage(
-  fluidRow(
-    column(width = 3,
-           h4("Filters"),
-           pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
-           selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "dw", multiple = FALSE),
-           selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
-           selectInput("admin1", "Admin 1:", choices = unique(dt_syria$admin1), multiple = TRUE),
-    ),
-    
-    column(width = 9,
-           leafletOutput("map", height = "90vh")
-    )
+  tags$style(type = "text/css", "
+    html, body {width:100%;height:100%;margin:0;padding:0;}
+    #map {position:absolute; top:0; bottom:0; right:0; left:0;}
+  "),
+  
+  leafletOutput("map", width = "100%", height = "100%"),
+  
+  absolutePanel(
+    id = "controls", class = "panel", top = 80, left = 10, width = 325,
+    draggable = FALSE, fixed = TRUE, 
+    style = "padding-left: 10px; background-color: #f7f7f7;",
+    h4("Filters"),
+    pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
+    selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "dw"),
+    selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
   ),
   
   absolutePanel(
-    id = "plots", class = "panel", 
-    fixed = TRUE, draggable = TRUE,
-    bottom = 10, left = 10, width = 600, height = 300,
+    id = "plots", class = "panel", bottom = 10, left = 10, width = 600, height = 300,
+    draggable = FALSE, fixed = TRUE,
     fluidRow(
       column(6, plotOutput("scatter_uw", height = "280px")),
       column(6, plotOutput("scatter_dw", height = "280px"))
