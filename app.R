@@ -107,6 +107,7 @@ ui <- fluidPage(
     h4("Filters"),
     pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
     selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "dw"),
+    selectInput("select_admin", "Admin", choices = c("Admin 1" = "admin1", "Admin 2" = "admin2"), multiple = FALSE),
     selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
   ),
   
@@ -164,11 +165,16 @@ server <- function(input, output, session) {
   syria_map_data <- reactive({
     req(input$year)
     
-    syria_admin1 %>%
-      left_join(
-        sum_syria1 %>% filter(yy == input$year),
-        by = "admin1"
-      )
+    if(input$select_admin == "admin1"){syria_admin1 %>%
+        left_join(
+          sum_syria1 %>% filter(yy == input$year),
+          by = "admin1"
+        )}
+    else if(input$select_admin == "admin2"){syria_admin2 %>%
+        left_join(
+          sum_syria2 %>% filter(yy == input$year),
+          by = "admin2"
+        )}
   })
   
   output$map <- renderLeaflet({
@@ -216,7 +222,7 @@ server <- function(input, output, session) {
         fillColor = ~pal(num_events),
         fillOpacity = 0.6,
         color = "black", weight = 1,
-        popup = ~paste0("<b>", admin1, "</b><br>",
+        popup = ~paste0("<b>", ifelse("admin1" %in% names(syria_data), admin1, admin2), "</b><br>",
                         "Events: ", num_events, "<br>",
                         "Fatalities: ", total_fatalities)
       ) %>%
