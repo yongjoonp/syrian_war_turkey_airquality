@@ -23,6 +23,7 @@ data_dir <- "/Users/yongjoonpark/Downloads/turkey_airquality"
 dt_syria <- fread(sprintf("%s/acled_dt_syr_war.csv", data_dir))
 dt_turkey <- fread(sprintf("%s/turkey_airquality_and_syrian_war.csv", data_dir))
 syria_admin1 <- st_read(sprintf("%s/syr_adm_unocha/syr_admbnda_adm1_uncs_unocha.json", data_dir))
+syria_admin2 <- st_read(sprintf("%s/syr_adm_unocha/syr_admbnda_adm2_uncs_unocha.json", data_dir))
 dt_turkey_weekly <- fread(sprintf("%s/dt_turkey_weekly.csv", data_dir))
 
 tmp_weeklydata <- data.table(dt_turkey_weekly)
@@ -35,6 +36,11 @@ syria_admin1 <- syria_admin1 %>%
   rename(admin1 = ADM1_EN) %>%
   mutate(admin1 = str_replace_all(admin1, "-", " ")) %>%
   mutate(admin1 = str_replace(admin1, "'", ""))
+
+syria_admin2 <- syria_admin2 %>%
+  rename(admin2 = ADM2_EN) %>%
+  mutate(admin2 = str_replace_all(admin2, "-", " ")) %>%
+  mutate(admin2 = str_replace(admin2, "'", ""))
 
 countries <- ne_countries(
   country = c("Turkey", "Syria"),
@@ -72,10 +78,16 @@ dt_turkey <- dt_turkey %>%
 #   ) %>%
 #   arrange(monitor_id, yy, week)
 
-sum_syria <- dt_syria
-sum_syria[, yy := year(date_v1)]
-sum_syria[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
-sum_syria <- sum_syria[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin1)]
+sum_syria1 <- dt_syria
+sum_syria1[, yy := year(date_v1)]
+sum_syria1[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
+sum_syria1 <- sum_syria1[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin1)]
+
+sum_syria2 <- dt_syria
+sum_syria2[, yy := year(date_v1)]
+sum_syria2[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
+sum_syria2 <- sum_syria2[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin1)]
+
 
 stations <- dt_turkey %>% 
   distinct(monitor_id, monitor, mon_lat, mon_lon)
@@ -154,7 +166,7 @@ server <- function(input, output, session) {
     
     syria_admin1 %>%
       left_join(
-        sum_syria %>% filter(yy == input$year),
+        sum_syria1 %>% filter(yy == input$year),
         by = "admin1"
       )
   })
