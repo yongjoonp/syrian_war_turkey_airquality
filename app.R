@@ -219,7 +219,7 @@ server <- function(input, output, session) {
         data = corr_dt,
         lng = ~mon_lon, lat = ~mon_lat,
         layerId = ~monitor,
-        popup = ~sprintf("%s \n %.2f (%.2f)", monitor, cor_var, se),
+        popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id, "</b><br>Correlation (Events ~ PM10): ", cor_var, "</b><br>P Value: ", p_val),
         radius = ~rescale(abs(cor_var), to = c(5, 15)),
         fillOpacity = ~rescale(-se, to = c(0.3, 1)), 
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
