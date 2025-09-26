@@ -15,6 +15,7 @@ library(shinyWidgets)
 library(lubridate)
 library(magrittr)
 library(scales)
+library(htmltools)
 
 data_dir <- "~/Documents/"
 data_dir <- "/Users/yongjoonpark/Downloads/turkey_airquality"
@@ -219,8 +220,12 @@ server <- function(input, output, session) {
         data = corr_dt,
         lng = ~mon_lon, lat = ~mon_lat,
         layerId = ~monitor,
-        popup = ~paste0("<b>", monitor, "</b><br>Station ID: ", monitor_id, "</b><br>Correlation (Events ~ PM10): ", cor_var, "</b><br>P Value: ", p_val),
-        radius = ~rescale(abs(cor_var), to = c(5, 15)),
+        label = ~lapply(paste0(
+          "<b>", monitor, "</b><br>",
+          "Station ID: ", monitor_id, "<br>",
+          "Correlation (Events ~ PM10): ", round(cor_var, 3), "<br>",
+          "P Value: ", signif(p_val, 3)
+        ), HTML),        radius = ~rescale(abs(cor_var), to = c(5, 15)),
         fillOpacity = ~rescale(-se, to = c(0.3, 1)), 
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
       ) 
