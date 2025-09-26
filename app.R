@@ -146,11 +146,29 @@ server <- function(input, output, session) {
     else{}
     
     tmp_weeklydata[yy == this_yy & !is.na(avg_pm10) & !is.na(get(corvar)), 
-                   .(
-                     cor_var = cor(get(corvar), avg_pm10),
-                     se = sd(get(corvar), na.rm = TRUE) / sqrt(.N)
-                     ),
-                   by = .(monitor, mon_lat, mon_lon, monitor_id)]
+                   {
+                     x <- get(corvar)
+                     y <- avg_pm10
+                     x <- x[complete.cases(x, y)]
+                     y <- y[complete.cases(x, y)]
+                     
+                     if (length(x) > 2 && sd(x) > 0 && sd(y) > 0) {
+                       ct <- suppressWarnings(cor.test(x, y))
+                       list(
+                         cor_var = cor(x, y),
+                         se      = sd(x, na.rm = TRUE) / sqrt(length(x)), 
+                         p_val   = unname(ct$p.value)
+                       )
+                     } else {
+                       list(
+                         cor_var = NA_real_,
+                         se      = NA_real_,
+                         p_val   = NA_real_
+                       )
+                     }
+                   },
+                   by = .(monitor, mon_lat, mon_lon, monitor_id)
+    ]
     
   })
 
