@@ -188,12 +188,16 @@ server <- function(input, output, session) {
         left_join(
           sum_syria1 %>% filter(yy == input$year),
           by = "admin1"
-        )}
+        ) %>%
+        mutate(admin_name = admin1)
+    }
     else if(input$select_admin == "admin2"){syria_admin2 %>%
         left_join(
           sum_syria2 %>% filter(yy == input$year),
           by = "admin2"
-        )}
+        ) %>%
+        mutate(admin_name = admin2)
+    }
   })
   
   output$map <- renderLeaflet({
@@ -245,7 +249,7 @@ server <- function(input, output, session) {
         fillColor = ~pal(num_events),
         fillOpacity = 0.6,
         color = "black", weight = 1,
-        popup = ~paste0("<b>", ifelse("admin1" %in% names(syria_data), admin1, admin2), "</b><br>",
+        popup = ~paste0("<b>", admin_name, "</b><br>",
                         "Events: ", num_events, "<br>",
                         "Fatalities: ", total_fatalities)
       ) %>%
