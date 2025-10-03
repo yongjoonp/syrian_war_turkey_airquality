@@ -112,14 +112,14 @@ ui <- fluidPage(
     selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
   ),
   
-  absolutePanel(
-    id = "plots", class = "panel", bottom = 10, left = 10, width = 600, height = 300,
-    draggable = FALSE, fixed = TRUE,
-    fluidRow(
-      column(6, plotOutput("scatter_uw", height = "280px")),
-      column(6, plotOutput("scatter_dw", height = "280px"))
-    )
-  )
+  # absolutePanel(
+  #   id = "plots", class = "panel", bottom = 10, left = 10, width = 600, height = 300,
+  #   draggable = FALSE, fixed = TRUE,
+  #   fluidRow(
+  #     column(6, plotOutput("scatter_uw", height = "280px")),
+  #     column(6, plotOutput("scatter_dw", height = "280px"))
+  #   )
+  # )
 )
 
 
