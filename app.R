@@ -222,6 +222,15 @@ server <- function(input, output, session) {
     }
   })
   
+  output$map <- renderLeaflet({
+    leaflet() %>%
+      addProviderTiles(providers$CartoDB.Voyager) %>%
+      addPolygons(
+        data = countries,
+        fill = FALSE, color = "black", weight = 1.2
+      )
+  })
+  
   observe({
     data <- filtered_data_weekly()
     stations_filtered <- distinct(data, monitor_id, monitor, mon_lat, mon_lon)
