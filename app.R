@@ -87,8 +87,7 @@ sum_syria1 <- sum_syria1[, .(latitude = mean(latitude), longitude = mean(longitu
 sum_syria2 <- dt_syria
 sum_syria2[, yy := year(date_v1)]
 sum_syria2[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
-sum_syria2 <- sum_syria2[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin1)]
-
+sum_syria2 <- sum_syria2[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin2)]
 
 stations <- dt_turkey %>% 
   distinct(monitor_id, monitor, mon_lat, mon_lon)
@@ -106,9 +105,9 @@ ui <- fluidPage(
     draggable = FALSE, fixed = TRUE, 
     style = "padding-left: 10px; background-color: #f7f7f7;",
     h4("Filters"),
-    pickerInput("year", "Select Year", choices = unique(dt_syria$yy), selected = 2017, multiple = FALSE),
+    pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
     selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "dw"),
-    selectInput("select_admin", "Admin", choices = c("Admin 1" = "admin1", "Admin 2" = "admin2"), selected = "admin2", multiple = FALSE),
+    selectInput("select_admin", "Admin", choices = c("Admin 1" = "admin1", "Admin 2" = "admin2"), multiple = FALSE),
     selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
   ),
   
@@ -134,8 +133,8 @@ server <- function(input, output, session) {
     
     return(data)
   })
-
-
+  
+  
   testing_corr <- reactive({
     req(input$year)
     req(input$correlation_type)
@@ -172,7 +171,7 @@ server <- function(input, output, session) {
     ]
     
   })
-
+  
   filtered_data_weekly <- reactive({
     req(input$year)
     
@@ -229,15 +228,16 @@ server <- function(input, output, session) {
           "Station ID: ", monitor_id, "<br>",
           "Correlation (Events ~ PM10): ", round(cor_var, 3), "<br>",
           "P Value: ", signif(p_val, 3)
-        ), HTML),        radius = ~rescale(abs(cor_var), to = c(5, 15)),
-        fillOpacity = ~rescale(-se, to = c(0.3, 1)), 
+        ), HTML),
+        radius = ~rescale(abs(cor_var), to = c(5, 15)),
+        fillOpacity = ~rescale(1 - p_val, to = c(0.3, 1)),
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
       ) 
-      # %>%
-      # fitBounds(
-      #   lng1 = min(stations$mon_lon), lat1 = min(stations$mon_lat),
-      #   lng2 = max(stations$mon_lon), lat2 = max(stations$mon_lat)
-      # )
+    # %>%
+    # fitBounds(
+    #   lng1 = min(stations$mon_lon), lat1 = min(stations$mon_lat),
+    #   lng2 = max(stations$mon_lon), lat2 = max(stations$mon_lat)
+    # )
     
     syria_data <- syria_map_data()
     
@@ -273,7 +273,7 @@ server <- function(input, output, session) {
   #   df <- filtered_data_weekly() %>%
   #     filter(monitor == clicked_station()) %>%
   #     filter(uw_events != 0)
-    
+  #   
   #   ggplot(df, aes(x = uw_events, y = avg_pm10)) +
   #     geom_point(color = "darkblue", alpha = 0.6) +
   #     geom_smooth(method = "lm", color = "red") +
@@ -281,13 +281,13 @@ server <- function(input, output, session) {
   #          x = "Upwind Events", y = "PM10") +
   #     theme_minimal()
   # })
-  
+  # 
   # output$scatter_dw <- renderPlot({
   #   req(clicked_station())
   #   df <- filtered_data_weekly() %>%
   #     filter(monitor == clicked_station()) %>%
   #     filter(dw_events != 0)
-    
+  #   
   #   ggplot(df, aes(x = dw_events, y = avg_pm10)) +
   #     geom_point(color = "darkgreen", alpha = 0.6) +
   #     geom_smooth(method = "lm", color = "red") +
@@ -295,7 +295,6 @@ server <- function(input, output, session) {
   #          x = "Downwind Events", y = "PM10") +
   #     theme_minimal()
   # })
-
 }
 
 shinyApp(ui, server)
