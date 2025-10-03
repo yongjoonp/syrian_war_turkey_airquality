@@ -18,7 +18,7 @@ library(scales)
 library(htmltools)
 
 data_dir <- "~/Documents/"
-data_dir <- "/Users/yongjoonpark/Downloads/turkey_airquality"
+data_dir <- "/Users/yongjoonparkadmin/Downloads/turkey_airquality"
 
 
 dt_syria <- fread(sprintf("%s/acled_dt_syr_war.csv", data_dir))
@@ -79,15 +79,37 @@ dt_turkey <- dt_turkey %>%
 #   ) %>%
 #   arrange(monitor_id, yy, week)
 
-sum_syria1 <- dt_syria
-sum_syria1[, yy := year(date_v1)]
-sum_syria1[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
-sum_syria1 <- sum_syria1[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin1)]
+# sum_syria1 <- dt_syria
+# sum_syria1[, yy := year(date_v1)]
+# sum_syria1[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
+# sum_syria1 <- sum_syria1[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin1)]
 
 sum_syria2 <- dt_syria
 sum_syria2[, yy := year(date_v1)]
 sum_syria2[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
 sum_syria2 <- sum_syria2[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin2)]
+
+sum_syria3 <- dt_syria
+sum_syria3[, yy := year(date_v1)]
+sum_syria3[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
+
+sum_syria3 <- sum_syria3[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin2, event_type)]
+
+
+# all events
+custom_breaks <- as.integer(sum_syria2[, .(quantile(num_events, probs = seq(0, 1, 0.1)))][, V1])
+sum_syria3[, .(quantile(num_events, probs = seq(0, 1, 0.1))), by = event_type]
+
+
+# custom_breaks <- c(0, 10, 25, 50, 100, Inf)
+custom_labels <- c("0-1", "1-3", "3-12", "0-1", "1-3", "3-12", "0-1", "1-3", "3-12", "3-12")
+
+# Create color palette
+custom_pal <- colorBin("YlOrRd", domain = NULL, bins = custom_breaks, na.color = "transparent")
+
+
+
+
 
 stations <- dt_turkey %>% 
   distinct(monitor_id, monitor, mon_lat, mon_lon)
@@ -253,6 +275,7 @@ server <- function(input, output, session) {
           "P Value: ", signif(p_val, 3)
         ), HTML),
         radius = ~rescale(abs(cor_var), to = c(5, 15)),
+        stroke = FALSE,
         fillOpacity = ~rescale(1 - p_val, to = c(0.3, 1)),
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
       ) 
@@ -269,19 +292,26 @@ server <- function(input, output, session) {
     leafletProxy("map") %>%
       addPolygons(
         data = syria_data,
-        fillColor = ~pal(num_events),
+        fillColor = ~custom_pal(num_events),
         fillOpacity = 0.6,
         color = "black", weight = 1,
         popup = ~paste0("<b>", admin_name, "</b><br>",
                         "Events: ", num_events, "<br>",
                         "Fatalities: ", total_fatalities)
       ) %>%
+      # addLegend(
+      #   position = "bottomright",
+      #   pal = pal,
+      #   values = syria_data$num_events,
+      #   title = "Number of Conflicts"
+      #   )
       addLegend(
         position = "bottomright",
-        pal = pal,
-        values = syria_data$num_events,
+        pal = custom_pal,
+        values = custom_breaks[-length(custom_breaks)],        
         title = "Number of Conflicts"
-      )
+        )
+      
   })
   
   
