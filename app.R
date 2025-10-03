@@ -108,7 +108,7 @@ ui <- fluidPage(
     pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
     selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "dw"),
     selectInput("select_admin", "Admin", choices = c("Admin 1" = "admin1", "Admin 2" = "admin2"), multiple = FALSE),
-    selectInput("syria_event", "Event Type:", choices = unique(dt_syria$event_type), multiple = TRUE),
+    selectInput("syria_event", "Event Type:", choices = c("All", "Explosions/Remote violence", "Battles", "Violence against civilians"), multiple = FALSE),
   ),
   
   # absolutePanel(
@@ -183,29 +183,43 @@ server <- function(input, output, session) {
   syria_map_data <- reactive({
     req(input$year)
     
-    if(input$select_admin == "admin1"){syria_admin1 %>%
-        left_join(
-          sum_syria1 %>% filter(yy == input$year),
-          by = "admin1"
-        ) %>%
-        mutate(admin_name = admin1)
+    filtered <- dt_syria %>%
+      filter(yy == input$year)
+    
+    if (!is.null(input$syria_event) && input$syria_event != "All") {
+      filtered <- filtered %>% filter(event_type == input$syria_event)
     }
-    else if(input$select_admin == "admin2"){syria_admin2 %>%
-        left_join(
-          sum_syria2 %>% filter(yy == input$year),
-          by = "admin2"
-        ) %>%
+    
+    if (input$select_admin == "admin1") {
+      sum_events <- filtered %>%
+        group_by(yy, admin1) %>%
+        summarise(
+          latitude = mean(latitude, na.rm = TRUE),
+          longitude = mean(longitude, na.rm = TRUE),
+          num_events = n(),
+          total_fatalities = sum(fatalities, na.rm = TRUE),
+          .groups = "drop"
+        )
+      
+      syria_admin1 %>%
+        left_join(sum_events, by = "admin1") %>%
+        mutate(admin_name = admin1)
+      
+    } else if (input$select_admin == "admin2") {
+      sum_events <- filtered %>%
+        group_by(yy, admin2) %>%
+        summarise(
+          latitude = mean(latitude, na.rm = TRUE),
+          longitude = mean(longitude, na.rm = TRUE),
+          num_events = n(),
+          total_fatalities = sum(fatalities, na.rm = TRUE),
+          .groups = "drop"
+        )
+      
+      syria_admin2 %>%
+        left_join(sum_events, by = "admin2") %>%
         mutate(admin_name = admin2)
     }
-  })
-  
-  output$map <- renderLeaflet({
-    leaflet() %>%
-      addProviderTiles(providers$CartoDB.Positron) %>%
-      addPolygons(
-        data = countries,
-        fill = FALSE, color = "black", weight = 1.2
-      )
   })
   
   observe({
