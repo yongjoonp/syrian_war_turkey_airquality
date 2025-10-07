@@ -18,13 +18,12 @@ library(scales)
 library(htmltools)
 
 data_dir <- "~/Documents/"
-data_dir <- "/Users/yongjoonparkadmin/Downloads/turkey_airquality"
+data_dir <- "/Users/yongjoonpark/Downloads/turkey_airquality"
 
 
 dt_syria <- fread(sprintf("%s/acled_dt_syr_war.csv", data_dir))
 dt_turkey <- fread(sprintf("%s/turkey_airquality_and_syrian_war.csv", data_dir))
-syria_admin1 <- st_read(sprintf("%s/syr_adm_unocha/syr_admbnda_adm1_uncs_unocha.json", data_dir))
-syria_admin2 <- st_read(sprintf("%s/syr_adm_unocha/syr_admbnda_adm2_uncs_unocha.json", data_dir))
+syria_admin2_raw <- st_read(sprintf("%s/syr_adm_unocha/syr_admbnda_adm2_uncs_unocha.json", data_dir))
 dt_turkey_weekly <- fread(sprintf("%s/dt_turkey_weekly.csv", data_dir))
 
 tmp_weeklydata <- data.table(dt_turkey_weekly)
@@ -33,12 +32,7 @@ tmp_weeklydata[is.nan(dw_events), dw_events := NA]
 tmp_weeklydata[is.nan(uw_events), uw_events := NA]
 
 
-syria_admin1 <- syria_admin1 %>%
-  rename(admin1 = ADM1_EN) %>%
-  mutate(admin1 = str_replace_all(admin1, "-", " ")) %>%
-  mutate(admin1 = str_replace(admin1, "'", ""))
-
-syria_admin2 <- syria_admin2 %>%
+syria_admin2 <- syria_admin2_raw %>%
   rename(admin2 = ADM2_EN) %>%
   mutate(admin2 = str_replace_all(admin2, "-", " ")) %>%
   mutate(admin2 = str_replace(admin2, "'", ""))
@@ -54,35 +48,6 @@ dt_turkey <- dt_turkey %>%
     yy = year(date_v1),
     week = isoweek(date_v1)
   )
-
-# dt_turkey_weekly <- dt_turkey %>%
-#   group_by(yy, week, monitor_id) %>%
-#   summarise(
-#     monitor         = first(monitor),
-#     mon_lat         = first(mon_lat),
-#     mon_lon         = first(mon_lon),
-#     avg_windspeed   = mean(windspeed, na.rm = TRUE),
-#     avg_temperature = mean(temperature, na.rm = TRUE),
-#     avg_precip      = mean(precip, na.rm = TRUE),
-#     avg_humidity    = mean(humidity, na.rm = TRUE),
-#     avg_pm10        = mean(pm10, na.rm = TRUE),
-#     avg_no2         = mean(no2, na.rm = TRUE),
-#     tot_events      = sum(tot_events, na.rm = TRUE),
-#     dw_events       = sum(dw_events, na.rm = TRUE),
-#     dw_fatals       = sum(dw_fatals, na.rm = TRUE),
-#     uw_events       = sum(uw_events, na.rm = TRUE),
-#     uw_fatals       = sum(uw_fatals, na.rm = TRUE),
-#     tot_fatals      = sum(tot_fatals, na.rm = TRUE),
-#     nw_events       = sum(nw_events, na.rm = TRUE),
-#     nw_fatals       = sum(nw_fatals, na.rm = TRUE),
-#     .groups = "drop"
-#   ) %>%
-#   arrange(monitor_id, yy, week)
-
-# sum_syria1 <- dt_syria
-# sum_syria1[, yy := year(date_v1)]
-# sum_syria1[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
-# sum_syria1 <- sum_syria1[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin1)]
 
 sum_syria2 <- dt_syria
 sum_syria2[, yy := year(date_v1)]
@@ -100,12 +65,14 @@ sum_syria3 <- sum_syria3[, .(latitude = mean(latitude), longitude = mean(longitu
 custom_breaks <- as.integer(sum_syria2[, .(quantile(num_events, probs = seq(0, 1, 0.1)))][, V1])
 sum_syria3[, .(quantile(num_events, probs = seq(0, 1, 0.1))), by = event_type]
 
-
-# custom_breaks <- c(0, 10, 25, 50, 100, Inf)
-custom_labels <- c("0-1", "1-3", "3-12", "0-1", "1-3", "3-12", "0-1", "1-3", "3-12", "3-12")
-
 # Create color palette
 custom_pal <- colorBin("YlOrRd", domain = NULL, bins = custom_breaks, na.color = "transparent")
+
+
+green_red_manual <- c("#4CAF50", "#F44336")
+pos_neg_corr <- c("Positive Correlation", "Negative Correlation")
+corr_labels <- factor(pos_neg_corr, levels = pos_neg_corr)
+green_red_pal <- colorFactor(palette = green_red_manual, domain = corr_labels)
 
 
 
@@ -121,45 +88,58 @@ ui <- fluidPage(
   "),
   
   leafletOutput("map", width = "100%", height = "100%"),
-  
+
+  absolutePanel(
+    id = "title", class = "panel", 
+    top = 40, left = 10, width = 1200,
+    style = "padding: 10px; background-color: transparent; border-radius: 8px;",
+    h2("Syrian Armed Conflicts and Air Quality in Turkey (2017-2020)"),
+  ),
+
+
+    absolutePanel(
+    id = "description", class = "panel", 
+    top = 120, left = 10, width = 325,
+    style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
+    h4("Description"),
+    p("In this interactive map, we visualize the intensity of armed conflicts in Syria and their wind-direction-adjusted correlation with air quality in Turkey. Specifically, for each monitoring station and Syrian conflict event pair, we determine whether the wind direction at the station is from the conflict location (downwind conflict) or toward it (upwind conflict). We then count the weekly number of downwind and upwind conflicts for each station given year. Using these data, we calculate the correlation between PM₁₀ levels in Turkey and the number of downwind/upwind conflicts in Syria, which is displayed as a scatterplot on the map. The size of each circle represents the strength of the correlation, its color indicates whether the correlation is positive (green) or negative (red), and its opacity reflects the statistical significance (more opaque means more significant).")
+  ),
+
   absolutePanel(
     id = "panel_year", class = "panel", 
-    top = 80, left = 10, width = 325,
+    top = 610, left = 10, width = 325,
     style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
     pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE)
   ),
-  
+
   absolutePanel(
     id = "panel_corr", class = "panel", 
-    top = 200, left = 10, width = 325, 
+    top = 720, left = 10, width = 325, 
     style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
-    h4("Monitoring Station Filters"),
-    selectInput("correlation_type", "Correlation Type:",
-                choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"),
-                selected = "dw")
+    h4(""),
+    selectInput("correlation_type", "Downwind vs Upwind conflicts relative to the monitoring station in Turkey:",
+      choices = c("Upwind Conflicts" = "uw", "Downwind Conflicts" = "dw"),
+      selected = "dw"),    
   ),
-  
+
   absolutePanel(
     id = "panel_admin", class = "panel", 
-    top = 360, left = 10, width = 325, 
+    top = 860, left = 10, width = 325, 
     style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
-    h4("Syria Event Filters"),
-    selectInput("select_admin", "Admin:",
-                choices = c("Admin 1" = "admin1", "Admin 2" = "admin2"),
-                multiple = FALSE),
-    selectInput("syria_event", "Event Type:",
-                choices = c("All", "Explosions/Remote violence", "Battles", "Violence against civilians"),
-                multiple = FALSE)
-  )
-  
-  # absolutePanel(
-  #   id = "plots", class = "panel", bottom = 10, left = 10, width = 600, height = 300,
-  #   draggable = FALSE, fixed = TRUE,
-  #   fluidRow(
-  #     column(6, plotOutput("scatter_uw", height = "280px")),
-  #     column(6, plotOutput("scatter_dw", height = "280px"))
-  #   )
-  # )
+    h4(""),
+    selectInput("syria_event", "Types of Armed Conflicts in Syria:",
+      choices = c("All", "Explosions/Remote violence", "Battles", "Violence against civilians"),
+      multiple = FALSE),
+     p("Choosing an event type in this panel (along with the selected year above) will display a choropleth map of Syria showing the number of conflicts of that type.")
+  ),
+
+  absolutePanel(
+    id = "acknowledgment", class = "panel", 
+    top = 1070, left = 10, width = 1000,
+    style = "background-color: transparent",
+     p("This Shiny application is developed by Ben Heep (benheep@gmail.com) and Yongjoon Park (yongjoonpark@umass.edu). Please reach out to them for any questions or feedback. Data sources: Armed Conflict Location & Event Data Project (ACLED) and Turkish air quality monitoring stations."),
+  ),
+
 )
 
 
@@ -211,6 +191,7 @@ server <- function(input, output, session) {
                    by = .(monitor, mon_lat, mon_lon, monitor_id)
     ]
     
+    
   })
   
   filtered_data_weekly <- reactive({
@@ -229,38 +210,22 @@ server <- function(input, output, session) {
     
     if (!is.null(input$syria_event) && input$syria_event != "All") {
       filtered <- filtered %>% filter(event_type == input$syria_event)
-    }
+    }    
+  
+    sum_events <- filtered %>%
+      group_by(yy, admin2) %>%
+      summarise(
+        latitude = mean(latitude, na.rm = TRUE),
+        longitude = mean(longitude, na.rm = TRUE),
+        num_events = n(),
+        total_fatalities = sum(fatalities, na.rm = TRUE),
+        .groups = "drop"
+      )
     
-    if (input$select_admin == "admin1") {
-      sum_events <- filtered %>%
-        group_by(yy, admin1) %>%
-        summarise(
-          latitude = mean(latitude, na.rm = TRUE),
-          longitude = mean(longitude, na.rm = TRUE),
-          num_events = n(),
-          total_fatalities = sum(fatalities, na.rm = TRUE),
-          .groups = "drop"
-        )
-      
-      syria_admin1 %>%
-        left_join(sum_events, by = "admin1") %>%
-        mutate(admin_name = admin1)
-      
-    } else if (input$select_admin == "admin2") {
-      sum_events <- filtered %>%
-        group_by(yy, admin2) %>%
-        summarise(
-          latitude = mean(latitude, na.rm = TRUE),
-          longitude = mean(longitude, na.rm = TRUE),
-          num_events = n(),
-          total_fatalities = sum(fatalities, na.rm = TRUE),
-          .groups = "drop"
-        )
-      
-      syria_admin2 %>%
-        left_join(sum_events, by = "admin2") %>%
-        mutate(admin_name = admin2)
-    }
+    syria_admin2 %>%
+      left_join(sum_events, by = "admin2") %>%
+      mutate(admin_name = admin2)
+    
   })
   
   output$map <- renderLeaflet({
@@ -306,12 +271,13 @@ server <- function(input, output, session) {
         stroke = FALSE,
         fillOpacity = ~get_opacity(p_val),
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
-      ) 
-    # %>%
-    # fitBounds(
-    #   lng1 = min(stations$mon_lon), lat1 = min(stations$mon_lat),
-    #   lng2 = max(stations$mon_lon), lat2 = max(stations$mon_lat)
-    # )
+      ) %>%
+      addLegend(
+        position = "topright",
+        pal = green_red_pal,
+        values = corr_labels,
+        title = "Correlation between PM10 in Turkey and<br>number of armed conflicts in Syria"
+        )
     
     syria_data <- syria_map_data()
     
@@ -327,18 +293,12 @@ server <- function(input, output, session) {
                         "Events: ", num_events, "<br>",
                         "Fatalities: ", total_fatalities)
       ) %>%
-      # addLegend(
-      #   position = "bottomright",
-      #   pal = pal,
-      #   values = syria_data$num_events,
-      #   title = "Number of Conflicts"
-      #   )
       addLegend(
         position = "bottomright",
         pal = custom_pal,
         values = custom_breaks[-length(custom_breaks)],        
-        title = "Number of Conflicts"
-        )
+        title = "Number of Conflicts in Syria"
+      )
       
   })
   
