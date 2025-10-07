@@ -235,6 +235,15 @@ server <- function(input, output, session) {
     data <- filtered_data_weekly()
     stations_filtered <- distinct(data, monitor_id, monitor, mon_lat, mon_lon)
     corr_dt <- testing_corr()
+
+    get_opacity <- function(p) {
+      case_when(
+        p < 0.01 ~ 1.0,
+        p < 0.05 ~ 0.8,
+        p < 0.10 ~ 0.6,
+        TRUE ~ 0.4
+      )
+    }
     
     leafletProxy("map") %>%
       clearMarkers() %>%
@@ -253,6 +262,8 @@ server <- function(input, output, session) {
           "P Value: ", signif(p_val, 3)
         ), HTML),
         radius = ~rescale(abs(cor_var), to = c(5, 15)),
+        stroke = FALSE,
+        fillOpacity = ~get_opacity(p_val),
         fillOpacity = ~rescale(1 - p_val, to = c(0.3, 1)),
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
       ) 
