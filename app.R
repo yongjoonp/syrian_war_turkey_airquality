@@ -123,15 +123,34 @@ ui <- fluidPage(
   leafletOutput("map", width = "100%", height = "100%"),
   
   absolutePanel(
-    id = "controls", class = "panel", top = 80, left = 10, width = 325,
-    draggable = FALSE, fixed = TRUE, 
-    style = "padding-left: 10px; background-color: #f7f7f7;",
-    h4("Filters"),
-    pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE),
-    selectInput("correlation_type", "Correlation Type:", choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"), selected = "dw"),
-    selectInput("select_admin", "Admin", choices = c("Admin 1" = "admin1", "Admin 2" = "admin2"), multiple = FALSE),
-    selectInput("syria_event", "Event Type:", choices = c("All", "Explosions/Remote violence", "Battles", "Violence against civilians"), multiple = FALSE),
+    id = "panel_year", class = "panel", 
+    top = 80, left = 10, width = 325,
+    style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
+    pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE)
   ),
+  
+  absolutePanel(
+    id = "panel_corr", class = "panel", 
+    top = 200, left = 10, width = 325, 
+    style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
+    h4("Monitoring Station Filters"),
+    selectInput("correlation_type", "Correlation Type:",
+                choices = c("Upwind Events" = "uw", "Downwind Events" = "dw"),
+                selected = "dw")
+  ),
+  
+  absolutePanel(
+    id = "panel_admin", class = "panel", 
+    top = 360, left = 10, width = 325, 
+    style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
+    h4("Syria Event Filters"),
+    selectInput("select_admin", "Admin:",
+                choices = c("Admin 1" = "admin1", "Admin 2" = "admin2"),
+                multiple = FALSE),
+    selectInput("syria_event", "Event Type:",
+                choices = c("All", "Explosions/Remote violence", "Battles", "Violence against civilians"),
+                multiple = FALSE)
+  )
   
   # absolutePanel(
   #   id = "plots", class = "panel", bottom = 10, left = 10, width = 600, height = 300,
@@ -285,11 +304,7 @@ server <- function(input, output, session) {
         ), HTML),
         radius = ~rescale(abs(cor_var), to = c(5, 15)),
         stroke = FALSE,
-<<<<<<< HEAD
         fillOpacity = ~get_opacity(p_val),
-=======
->>>>>>> a0e3f83fa76161deb9b1df4dded16a8f30227f6a
-        fillOpacity = ~rescale(1 - p_val, to = c(0.3, 1)),
         color = ~ifelse(cor_var >= 0, "#4CAF50", "#F44336")
       ) 
     # %>%
