@@ -102,7 +102,7 @@ ui <- fluidPage(
     top = 120, left = 10, width = 325,
     style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
     h4("Description"),
-    p("In this interactive map, we visualize the intensity of armed conflicts in Syria and their wind-direction-adjusted correlation with air quality in Turkey. Specifically, for each monitoring station and Syrian conflict event pair, we determine whether the wind direction at the station is from the conflict location (downwind conflict) or toward it (upwind conflict). We then count the weekly number of downwind and upwind conflicts for each station given year. Using these data, we calculate the correlation between PM₁₀ levels in Turkey and the number of downwind/upwind conflicts in Syria, which is displayed as a scatterplot on the map. The size of each circle represents the strength of the correlation, its color indicates whether the correlation is positive (green) or negative (red), and its opacity reflects the statistical significance (more opaque means more significant).")
+    p("In this interactive map, we visualize the intensity of armed conflicts in Syria and their wind-direction-adjusted correlation with air quality in Turkey. Specifically, for each monitoring station and Syrian conflict event pair, we determine whether the wind direction at the station is from the conflict location (downwind conflict) or toward it (upwind conflict). We then count the weekly number of downwind and upwind conflicts for each station in the given year. Using this data, we calculate the correlation between PM₁₀ levels in Turkey and the number of downwind/upwind conflicts in Syria. The size of each circle represents the strength of the correlation, its color indicates whether the correlation is positive (green) or negative (red), and its opacity reflects the statistical significance (more opaque means more significant).")
   ),
 
   absolutePanel(
@@ -137,7 +137,7 @@ ui <- fluidPage(
     id = "acknowledgment", class = "panel", 
     top = 1070, left = 10, width = 1000,
     style = "background-color: transparent",
-     p("This Shiny application is developed by Ben Heep (benheep@gmail.com) and Yongjoon Park (yongjoonpark@umass.edu). Please reach out to them for any questions or feedback. Data sources: Armed Conflict Location & Event Data Project (ACLED) and Turkish air quality monitoring stations."),
+     p("This Shiny application was developed by Ben Heep (benheep@gmail.com) and Yongjoon Park (yongjoonpark@umass.edu). Please reach out to them for any questions or feedback. Data sources: Armed Conflict Location & Event Data Project (ACLED) and Turkish air quality monitoring stations."),
   ),
 
 )
