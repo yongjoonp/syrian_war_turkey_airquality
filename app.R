@@ -91,17 +91,40 @@ ui <- fluidPage(
   
   absolutePanel(
     id = "title", class = "panel", 
-    top = 10, left = 10, width = 1200,
-    style = "padding: 10px; background-color: transparent; border-radius: 8px; text-align: center;",
-    h2("Syrian Armed Conflicts and Air Quality in Turkey (2017-2020)"),
+    top = 10, left = "50%",
+    style = "
+    transform: translateX(-50%);   /* centers the panel horizontally */
+    display: inline-block;          /* make width fit content */
+    background-color: transparent; 
+    backdrop-filter: blur(4px);
+    border-radius: 10px;
+    padding: 10px 10px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  ",
+    h2("Syrian Armed Conflicts and Air Quality in Turkey (2017–2020)")
   ),
   
-  
   absolutePanel(
-    id = "description", class = "panel", 
-    bottom = 0, left = 10, width = 1250,
-    style = "padding: 5px; background-color: #f7f7f7; border-radius: 8px; font-size: 90%;",
-    p("In this interactive map, we visualize the intensity of armed conflicts in Syria and their wind-direction-adjusted correlation with air quality in Turkey. Specifically, for each monitoring station and Syrian conflict event pair, we determine whether the wind direction at the station is from the conflict location (downwind conflict) or toward it (upwind conflict). We then count the weekly number of downwind and upwind conflicts for each station in the given year. Using this data, we calculate the correlation between PM₁₀ levels in Turkey and the number of downwind/upwind conflicts in Syria. The size of each circle represents the strength of the correlation, its color indicates whether the correlation is positive (green) or negative (red), and its opacity reflects the statistical significance (more opaque means more significant).")
+    id = "panel_desc_toggle", class = "panel",
+    top = 105, right = 10, width = 285,
+    style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
+    selectInput(
+      inputId = "show_description",
+      label = "Show Map Description:",
+      choices = c("No", "Yes"),
+      selected = "No"
+    )
+  ),
+  
+  conditionalPanel(
+    condition = "input.show_description == 'Yes'",
+    absolutePanel(
+      id = "description", class = "panel", 
+      top = 210, right = 10, width = 285,
+      style = "padding: 5px; background-color: #f7f7f7; border-radius: 10px; font-size: 90%;",
+      p("In this interactive map, we visualize the intensity of armed conflicts in Syria and their wind-direction-adjusted correlation with air quality in Turkey. Specifically, for each monitoring station and Syrian conflict event pair, we determine whether the wind direction at the station is from the conflict location (downwind conflict) or toward it (upwind conflict). We then count the weekly number of downwind and upwind conflicts for each station in the given year. Using this data, we calculate the correlation between PM₁₀ levels in Turkey and the number of downwind/upwind conflicts in Syria. The size of each circle represents the strength of the correlation, its color indicates whether the correlation is positive (green) or negative (red), and its opacity reflects the statistical significance (more opaque means more significant).")
+    )
   ),
   
   absolutePanel(
@@ -134,8 +157,8 @@ ui <- fluidPage(
   
   absolutePanel(
     id = "acknowledgment", class = "panel", 
-    top = 850, left = 10, width = 1000,
-    style = "background-color: transparent",
+    bottom = 0, left = 10, width = 1000,
+    style = "padding: 5px; background-color: #f7f7f7; border-radius: 8px; font-size: 80%;",
     p("This Shiny application was developed by Ben Heep (benheep@gmail.com) and Yongjoon Park (yongjoonpark@umass.edu). Please reach out to them for any questions or feedback. Data sources: Armed Conflict Location & Event Data Project (ACLED) and Turkish air quality monitoring stations."),
   ),
   
