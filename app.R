@@ -288,9 +288,22 @@ server <- function(input, output, session) {
         fillColor = ~custom_pal(num_events),
         fillOpacity = 0.6,
         color = "black", weight = 1,
-        popup = ~paste0("<b>", admin_name, "</b><br>",
-                        "Events: ", num_events, "<br>",
-                        "Fatalities: ", total_fatalities)
+        # popup = ~paste0("<b>", admin_name, "</b><br>",
+        #                 "Events: ", num_events, "<br>",
+        #                 "Fatalities: ", total_fatalities),
+        label = ~lapply(paste0(
+          "<b>", admin_name, "</b><br>",
+          "Events: ", num_events, "<br>",
+          "Fatalities: ", total_fatalities
+        ), HTML),
+        labelOptions = labelOptions(
+          offset = c(-10, 0)
+        ),
+        highlightOptions = highlightOptions(
+          weight = 2,
+          color = "white",
+          bringToFront = TRUE
+        )
       ) %>%
       addLegend(
         position = "bottomright",
