@@ -91,8 +91,8 @@ ui <- fluidPage(
   
   absolutePanel(
     id = "title", class = "panel", 
-    top = 40, left = 10, width = 1200,
-    style = "padding: 10px; background-color: transparent; border-radius: 8px;",
+    top = 10, left = 10, width = 1200,
+    style = "padding: 10px; background-color: transparent; border-radius: 8px; text-align: center;",
     h2("Syrian Armed Conflicts and Air Quality in Turkey (2017-2020)"),
   ),
   
