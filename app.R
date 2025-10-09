@@ -112,8 +112,8 @@ ui <- fluidPage(
     selectInput(
       inputId = "show_description",
       label = "Show Map Description:",
-      choices = c("No", "Yes"),
-      selected = "No"
+      choices = c("Yes", "No"),
+      selected = "Yes"
     )
   ),
   
