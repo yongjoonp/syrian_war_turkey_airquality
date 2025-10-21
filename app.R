@@ -17,14 +17,14 @@ library(magrittr)
 library(scales)
 library(htmltools)
 
-data_dir <- "~/Documents/"
-data_dir <- "/Users/yongjoonpark/Downloads/turkey_airquality"
+data_dir <- "data/"
 
 
-dt_syria <- fread(sprintf("%s/acled_dt_syr_war.csv", data_dir))
-dt_turkey <- fread(sprintf("%s/turkey_airquality_and_syrian_war.csv", data_dir))
 syria_admin2_raw <- st_read(sprintf("%s/syr_adm_unocha/syr_admbnda_adm2_uncs_unocha.json", data_dir))
 dt_turkey_weekly <- fread(sprintf("%s/dt_turkey_weekly.csv", data_dir))
+sum_syria_combined <- fread(sprintf("%s/sum_syria_combined.csv", data_dir))
+
+
 
 tmp_weeklydata <- data.table(dt_turkey_weekly)
 tmp_weeklydata[is.nan(avg_pm10), avg_pm10 := NA]
@@ -43,27 +43,16 @@ countries <- ne_countries(
   scale = "medium"
 )
 
-dt_turkey <- dt_turkey %>%
-  mutate(
-    yy = year(date_v1),
-    week = isoweek(date_v1)
-  )
+# dt_turkey <- dt_turkey %>%
+#   mutate(
+#     yy = year(date_v1),
+#     week = isoweek(date_v1)
+#   )
 
-sum_syria2 <- dt_syria
-sum_syria2[, yy := year(date_v1)]
-sum_syria2[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
-sum_syria2 <- sum_syria2[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin2)]
-
-sum_syria3 <- dt_syria
-sum_syria3[, yy := year(date_v1)]
-sum_syria3[, .(.N, sum(fatalities)), keyby = c("yy", "admin1", "admin2")]
-
-sum_syria3 <- sum_syria3[, .(latitude = mean(latitude), longitude = mean(longitude), num_events = .N, total_fatalities = sum(fatalities)), by = .(yy, admin2, event_type)]
 
 
 # all events
-custom_breaks <- as.integer(sum_syria2[, .(quantile(num_events, probs = seq(0, 1, 0.1)))][, V1])
-sum_syria3[, .(quantile(num_events, probs = seq(0, 1, 0.1))), by = event_type]
+custom_breaks <- as.integer(sum_syria_combined[event_type == "All", .(quantile(num_events, probs = seq(0, 1, 0.1)))][, V1])
 
 # Create color palette
 custom_pal <- colorBin("YlOrRd", domain = NULL, bins = custom_breaks, na.color = "transparent")
@@ -77,9 +66,8 @@ green_red_pal <- colorFactor(palette = green_red_manual, domain = corr_labels)
 
 
 
-
-stations <- dt_turkey %>% 
-  distinct(monitor_id, monitor, mon_lat, mon_lon)
+stations <- unique(dt_turkey_weekly[, .(monitor_id, monitor, mon_lat, mon_lon)])
+  
 
 ui <- fluidPage(
   tags$style(type = "text/css", "
@@ -131,7 +119,7 @@ ui <- fluidPage(
     id = "panel_year", class = "panel", 
     top = 150, left = 10, width = 325,
     style = "padding: 10px; background-color: #f7f7f7; border-radius: 8px;",
-    pickerInput("year", "Select Year", choices = unique(dt_syria$yy), multiple = FALSE)
+    pickerInput("year", "Select Year", choices = unique(dt_turkey_weekly$yy), multiple = FALSE)
   ),
   
   absolutePanel(
@@ -167,15 +155,15 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-  filtered_data_turkey <- reactive({
-    data <- dt_turkey
+  # filtered_data_turkey <- reactive({
+  #   data <- dt_turkey
     
-    if(!is.null(input$year) && length(input$year) > 0) {
-      data <- data[data$yy %in% input$year]
-    }
+  #   if(!is.null(input$year) && length(input$year) > 0) {
+  #     data <- data[data$yy %in% input$year]
+  #   }
     
-    return(data)
-  })
+  #   return(data)
+  # })
   
   
   testing_corr <- reactive({
@@ -227,25 +215,14 @@ server <- function(input, output, session) {
   syria_map_data <- reactive({
     req(input$year)
     
-    filtered <- dt_syria %>%
-      filter(yy == input$year)
+    filtered <- sum_syria_combined[yy == input$year]
     
     if (!is.null(input$syria_event) && input$syria_event != "All") {
-      filtered <- filtered %>% filter(event_type == input$syria_event)
+      filtered <- filtered[event_type == input$syria_event]
     }    
   
-    sum_events <- filtered %>%
-      group_by(yy, admin2) %>%
-      summarise(
-        latitude = mean(latitude, na.rm = TRUE),
-        longitude = mean(longitude, na.rm = TRUE),
-        num_events = n(),
-        total_fatalities = sum(fatalities, na.rm = TRUE),
-        .groups = "drop"
-      )
-    
     syria_admin2 %>%
-      left_join(sum_events, by = "admin2") %>%
+      left_join(filtered, by = "admin2") %>%
       mutate(admin_name = admin2)
     
   })
@@ -260,8 +237,8 @@ server <- function(input, output, session) {
   })
   
   observe({
-    data <- filtered_data_weekly()
-    stations_filtered <- distinct(data, monitor_id, monitor, mon_lat, mon_lon)
+    data <- filtered_data_weekly()    
+    stations_filtered <- unique(data[, .(monitor_id, monitor, mon_lat, mon_lon)])
     corr_dt <- testing_corr()
 
     get_opacity <- function(p) {
@@ -331,10 +308,9 @@ server <- function(input, output, session) {
       addLegend(
         position = "bottomright",
         pal = custom_pal,
-        values = custom_breaks[-length(custom_breaks)],        
+        values = custom_breaks[-length(custom_breaks)],
         title = "Number of Conflicts in Syria"
       )
-      
   })
   
   
@@ -344,33 +320,7 @@ server <- function(input, output, session) {
     clicked_station(click$id)
   })
   
-  # output$scatter_uw <- renderPlot({
-  #   req(clicked_station())
-  #   df <- filtered_data_weekly() %>%
-  #     filter(monitor == clicked_station()) %>%
-  #     filter(uw_events != 0)
-  #   
-  #   ggplot(df, aes(x = uw_events, y = avg_pm10)) +
-  #     geom_point(color = "darkblue", alpha = 0.6) +
-  #     geom_smooth(method = "lm", color = "red") +
-  #     labs(title = paste("Upwind Events vs PM10 -", clicked_station(), "-", input$year),
-  #          x = "Upwind Events", y = "PM10") +
-  #     theme_minimal()
-  # })
-  # 
-  # output$scatter_dw <- renderPlot({
-  #   req(clicked_station())
-  #   df <- filtered_data_weekly() %>%
-  #     filter(monitor == clicked_station()) %>%
-  #     filter(dw_events != 0)
-  #   
-  #   ggplot(df, aes(x = dw_events, y = avg_pm10)) +
-  #     geom_point(color = "darkgreen", alpha = 0.6) +
-  #     geom_smooth(method = "lm", color = "red") +
-  #     labs(title = paste("Downwind Events vs PM10 -", clicked_station(), "-", input$year),
-  #          x = "Downwind Events", y = "PM10") +
-  #     theme_minimal()
-  # })
+  
 }
 
 shinyApp(ui, server)
