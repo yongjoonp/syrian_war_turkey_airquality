@@ -172,8 +172,8 @@ server <- function(input, output, session) {
     
     this_yy <- input$year
     
-    if(input$correlation_type == "uw"){ corvar <- "uw_events" }
-    else if(input$correlation_type == "dw"){ corvar <- "dw_events" }
+    if(input$correlation_type == "uw"){ corvar <- "uw_events"; cor_label <- "# of Upwind Conflicts" }
+    else if(input$correlation_type == "dw"){ corvar <- "dw_events"; cor_label <- "# of Downwind Conflicts" }
     else{}
     
     tmp_weeklydata[yy == this_yy & !is.na(avg_pm10) & !is.na(get(corvar)), 
@@ -217,7 +217,7 @@ server <- function(input, output, session) {
     
     filtered <- sum_syria_combined[yy == input$year]
     
-    if (!is.null(input$syria_event) && input$syria_event != "All") {
+    if (!is.null(input$syria_event)) {
       filtered <- filtered[event_type == input$syria_event]
     }    
   
@@ -262,9 +262,8 @@ server <- function(input, output, session) {
         layerId = ~monitor,
         label = ~lapply(paste0(
           "<b>", monitor, "</b><br>",
-          "Station ID: ", monitor_id, "<br>",
-          "Correlation (Events ~ PM10): ", round(cor_var, 3), "<br>",
-          "P Value: ", signif(p_val, 3)
+          "corr(", ifelse(input$correlation_type == "uw" , "# of Upwind Conflicts", "# of Downwind Conflicts"), ", PM10): ", round(cor_var, 3), "<br>",
+          sprintf("P-value for H0 of zero correlation: %0.3f", p_val)
         ), HTML),
         radius = ~rescale(abs(cor_var), to = c(5, 15)),
         stroke = FALSE,
